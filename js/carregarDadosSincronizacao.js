@@ -1,4 +1,4 @@
-import { criarRequestOptions, fetchJson, urlApi } from "./main.js";
+import { criarRequestOptions, fetchJson, modalLoading, urlApi } from "./main.js";
 
 const modalCarregarArquivoSincronizacao = $("#modal-carregar-arquivo-sincronizacao");
 const botaoCarregarDados = $("#botao-carregar-dados");
@@ -18,13 +18,22 @@ inputArquivoSincronizacaoDados.change(() => {
 
 
 botaoSincronizarArquivoDados.click(async () => {
-    let formData = new FormData();
-    formData.append('arquivo_sincronizacao', inputArquivoSincronizacaoDados.prop('files')[0]);
-    let url = urlApi + `setrab/sincronizar/`;
-    const options = criarRequestOptions('POST', formData);
-    let response = await fetchJson(url, options);
-    alert(response.descricao);
-    modalCarregarArquivoSincronizacao.modal('hide');
+    try {
+        modalLoading.modal('show');
+        let formData = new FormData();
+        formData.append('arquivo_sincronizacao', inputArquivoSincronizacaoDados.prop('files')[0]);
+        let url = urlApi + `setrab/sincronizar/`;
+        const options = criarRequestOptions('POST', formData);
+        let response = await fetchJson(url, options);
+        alert(response.descricao);
+        modalCarregarArquivoSincronizacao.modal('hide');
+    } catch (error) {
+        alert(`Erro ao acessar a API: ${error}`);
+    } finally {
+        setTimeout(() => {
+            modalLoading.modal('hide');
+        }, 500);
+    }
 })
 
 modalCarregarArquivoSincronizacao.on('hidden.bs.modal', () => {

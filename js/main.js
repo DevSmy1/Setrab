@@ -8,6 +8,7 @@ if (
     urlApi = "http://localhost:8000/api/";
 }
 
+
 const getCookie = (name) => {
     const cookies = document.cookie.split(";");
     for (let i = 0; i < cookies.length; i++) {
@@ -51,7 +52,7 @@ export const fetchJson = async (url, options) => {
     return jsonResponse;
 };
 
-
+export const modalLoading = $("#modal-loading");
 
 
 

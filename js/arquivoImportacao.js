@@ -55,21 +55,25 @@ tabela.on('select', function (e, dt, type, indexes) {
 
 
 export async function buscarArquivosImportados() {
-    const api = urlApi + "setrab/importacoes";
-    const options = criarRequestOptions("GET");
-    const response = await fetchJson(api, options);
-    tabela.clear().draw();
-    response.forEach((item) => {
-        tabela.row.add([
-            item.nome_arquivo,
-            item.mes,
-            item.usuario_criacao,
-            item.status,
-            item.resposta_servidor,
-            item.data_criacao,
-            item.arquivo_erro,
-        ]).draw();
-    });
+    try {
+        const api = urlApi + "setrab/importacoes";
+        const options = criarRequestOptions("GET");
+        const response = await fetchJson(api, options);
+        tabela.clear().draw();
+        response.forEach((item) => {
+            tabela.row.add([
+                item.nome_arquivo,
+                item.mes,
+                item.usuario_criacao,
+                item.status,
+                item.resposta_servidor,
+                item.data_criacao,
+                item.arquivo_erro,
+            ]).draw();
+        });
+    } catch (error) {
+        alert(`Erro ao acessar a API: ${error}`);
+    }
 }
 
 buscarArquivosImportados();
