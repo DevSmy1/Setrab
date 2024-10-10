@@ -1,6 +1,6 @@
 // Importações
 import { buscarArquivosImportados } from "./arquivoImportacao.js";
-import { criarRequestOptions, fetchJson, urlApi } from "./main.js";
+import { criarRequestOptions, fetchJson, modalLoading, urlApi } from "./main.js";
 
 // Elementos do DOM
 const modalImportarArquivo = $('#modal-importar-arquivo');
@@ -40,61 +40,81 @@ const tabela = $(`#${NOME_TABELA}`).DataTable({
 
 // Eventos
 botaoImportarArquivo.click(async () => {
-    let formData = new FormData();
-    
-    let dataFiltro = `?data_filtro=${inputDataImportacao.val()}-01`
-    let url = urlApi + `setrab/importar/`;
-    if (TIPO_ARQUIVO == 'A') {
-        url += `admissao/${dataFiltro}`;
-        formData.append('arquivo_admissao', inputArquivoImportacao.prop('files')[0]);
-    } else if (TIPO_ARQUIVO == 'D') {
-        url += `demissao/${dataFiltro}`;
-        formData.append('arquivo_demissao', inputArquivoImportacao.prop('files')[0]);
-    } else if (TIPO_ARQUIVO == 'T') {
-        url += `transferencia/${dataFiltro}`;
-        formData.append('arquivo_transferencia', inputArquivoImportacao.prop('files')[0]);
-    } else if (TIPO_ARQUIVO == 'TF') {
-        url += `mudFuncao/${dataFiltro}`;
-        formData.append('arquivo_mudanca_funcao', inputArquivoImportacao.prop('files')[0])
+    try {
+        if (validarCampos()) {
+            modalLoading.modal('show');
+            let formData = new FormData();
+            let dataFiltro = `?data_filtro=${inputDataImportacao.val()}-01`
+            let url = urlApi + `setrab/importar/`;
+            if (TIPO_ARQUIVO == 'A') {
+                url += `admissao/${dataFiltro}`;
+                formData.append('arquivo_admissao', inputArquivoImportacao.prop('files')[0]);
+            } else if (TIPO_ARQUIVO == 'D') {
+                url += `demissao/${dataFiltro}`;
+                formData.append('arquivo_demissao', inputArquivoImportacao.prop('files')[0]);
+            } else if (TIPO_ARQUIVO == 'T') {
+                url += `transferencia/${dataFiltro}`;
+                formData.append('arquivo_transferencia', inputArquivoImportacao.prop('files')[0]);
+            } else if (TIPO_ARQUIVO == 'MF') {
+                url += `mudFuncao/${dataFiltro}`;
+                formData.append('arquivo_mudanca_funcao', inputArquivoImportacao.prop('files')[0])
+            }
+        
+            const options = criarRequestOptions('POST', formData);
+            let response = await fetchJson(url, options);
+            dadosSincronizar = response;
+            tabela.clear().draw();
+            response.forEach(element => {
+                tabela.row.add([
+                    element.id_empresa_rh,
+                    element.nome,
+                    element.id_funcionario,
+                    element.erro_sistema != null ? 'Erro' : 'OK',
+                    element.erro_sistema != null ? element.erro_sistema : 'Sem erro',
+                ]).draw();
+            });
+            divTabelaFeedback.show();
+            botaoSincronizarArquivo.show();
+        }
+    } catch (error) {
+        alert(`Erro ao acessar a API: ${error}`);
+        modalLoading.modal('hide');
+    } finally{
+        setTimeout(() => {
+            modalLoading.modal('hide');
+        }, 500);
     }
-
-    const options = criarRequestOptions('POST', formData);
-    let response = await fetchJson(url, options);
-    dadosSincronizar = response;
-    tabela.clear().draw();
-    response.forEach(element => {
-        tabela.row.add([
-            element.id_empresa_rh,
-            element.nome,
-            element.id_funcionario,
-            element.erro_sistema != null ? 'Erro' : 'OK',
-            element.erro_sistema != null ? element.erro_sistema : 'Sem erro',
-        ]).draw();
-    });
-    divTabelaFeedback.show();
-    botaoSincronizarArquivo.show();
 })
 
 botaoSincronizarArquivo.click(async () => {
-    let data = {
-        "dados" : dadosSincronizar,
-        "nome_arquivo" : inputArquivoImportacao.prop('files')[0].name,
-        "mes" : `${inputDataImportacao.val()}-01`,
+    try {
+        modalLoading.modal('show');
+        let data = {
+            "dados" : dadosSincronizar,
+            "nome_arquivo" : inputArquivoImportacao.prop('files')[0].name,
+            "mes" : `${inputDataImportacao.val()}-01`,
+        }
+        let url = urlApi + `setrab/sincronizar/`;
+        if (TIPO_ARQUIVO == 'A') {
+            url += `admissao/`;
+        } else if (TIPO_ARQUIVO == 'D') {
+            url += `demissao/`;
+        } else if (TIPO_ARQUIVO == 'T') {
+            url += `transferencia/`;
+        } else if (TIPO_ARQUIVO == 'MF') {
+            url += `mudFuncao/`;
+        }
+        const options = criarRequestOptions('POST', data);
+        let response = await fetchJson(url, options);
+        alert(response.descricao);
+        modalImportarArquivo.modal('hide');
+    } catch (error) {
+        alert(`Erro ao acessar a API: ${error}`);
+    } finally{
+        setTimeout(() => {
+            modalLoading.modal('hide');
+        }, 500);
     }
-    let url = urlApi + `setrab/sincronizar/`;
-    if (TIPO_ARQUIVO == 'A') {
-        url += `admissao/`;
-    } else if (TIPO_ARQUIVO == 'D') {
-        url += `demissao/`;
-    } else if (TIPO_ARQUIVO == 'T') {
-        url += `transferencia/`;
-    } else if (TIPO_ARQUIVO == 'TF') {
-        url += `mudFuncao/`;
-    }
-    const options = criarRequestOptions('POST', data);
-    let response = await fetchJson(url, options);
-    alert(response.descricao);
-    modalImportarArquivo.modal('hide');
 });
 
 botaoAdmissao.click(() => {
@@ -118,7 +138,7 @@ botaoTransferencia.click(() => {
 botaoMudancaFuncao.click(() => {
     modalImportarArquivo.modal('show');
     tituloModal.text('Mudança de Função');
-    TIPO_ARQUIVO = "TF";
+    TIPO_ARQUIVO = "MF";
 })
 
 
@@ -132,3 +152,17 @@ modalImportarArquivo.on('hidden.bs.modal', () => {
     tabela.clear().draw();
     buscarArquivosImportados();
 });
+
+// Funções
+const validarCampos = () => {
+    if (inputArquivoImportacao.val() === '') {
+        alert('Selecione um arquivo');
+        return false;
+    }
+    if (inputDataImportacao.val() === '') {
+        alert('Selecione uma data');
+        return false;
+    }
+    return true;
+}
+
