@@ -1,4 +1,3 @@
-
 export var urlApi;
 
 if (
@@ -6,8 +5,11 @@ if (
     window.location.hostname === "127.0.0.1"
 ) {
     urlApi = "http://localhost:8000/api/";
+} else if (window.location.hostname === "developer.yamauchi.lan") {
+    urlApi = "https://developer.yamauchi.lan:8003/api/";
+} else if (window.location.hostname === "intranet.yamauchi.lan") {
+    urlApi = "https://intranet.yamauchi.lan:8003/api/";
 }
-
 
 const getCookie = (name) => {
     const cookies = document.cookie.split(";");
@@ -40,7 +42,7 @@ export const criarRequestOptions = (method, body) => {
 };
 
 export const fetchJson = async (url, options) => {
-    const response = await fetch(url, options); 
+    const response = await fetch(url, options);
     const jsonResponse = await response.json();
     if (!response.ok) {
         if (response.status === 404) {
@@ -53,7 +55,3 @@ export const fetchJson = async (url, options) => {
 };
 
 export const modalLoading = $("#modal-loading");
-
-
-
-
